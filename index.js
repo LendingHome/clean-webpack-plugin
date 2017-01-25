@@ -1,14 +1,17 @@
-'use strict';
+"use strict";
 
-var fs = require('fs');
-var os = require('os');
-var path = require('path');
-var rimraf = require('rimraf');
+var fs = require("fs");
+var os = require("os");
+var path = require("path");
+var rimraf = require("rimraf");
 
 // added node .10
 // http://stackoverflow.com/questions/21698906/how-to-check-if-a-path-is-absolute-or-relative/30714706#30714706
 function isAbsolute(dir) {
-  return path.normalize(dir + path.sep) === path.normalize(path.resolve(dir) + path.sep);
+  return (
+    path.normalize(dir + path.sep) ===
+    path.normalize(path.resolve(dir) + path.sep)
+  );
 }
 
 function upperCaseWindowsRoot(dir) {
@@ -19,15 +22,15 @@ function upperCaseWindowsRoot(dir) {
 
 function CleanWebpackPlugin(paths, options) {
   //backwards compatibility
-  if (typeof options === 'string') {
+  if (typeof options === "string") {
     options = {
       root: options
-    }
+    };
   }
 
   options = options || {};
   if (options.verbose === undefined) {
-    if (process.env.NODE_ENV === 'test') {
+    if (process.env.NODE_ENV === "test") {
       options.verbose = false;
     } else {
       options.verbose = true;
@@ -43,7 +46,7 @@ function CleanWebpackPlugin(paths, options) {
   options.root = options.root || path.dirname(module.parent.filename);
 
   // allows for a single string entry
-  if (typeof paths == 'string' || paths instanceof String) {
+  if (typeof paths == "string" || paths instanceof String) {
     paths = [paths];
   }
 
@@ -62,15 +65,21 @@ var clean = function() {
 
   // exit if no paths passed in
   if (_this.paths === void 0) {
-    results.push({ path: _this.paths, output: 'nothing to clean' });
+    results.push({ path: _this.paths, output: "nothing to clean" });
     return results;
   }
 
   if (!isAbsolute(_this.options.root)) {
-    _this.options.verbose && console.warn(
-      'clean-webpack-plugin: ' + _this.options.root +
-      ' project root must be an absolute path. Skipping all...');
-    results.push({ path: _this.options.root, output: 'project root must be an absolute path' });
+    _this.options.verbose &&
+      console.warn(
+        "clean-webpack-plugin: " +
+          _this.options.root +
+          " project root must be an absolute path. Skipping all..."
+      );
+    results.push({
+      path: _this.options.root,
+      output: "project root must be an absolute path"
+    });
     return results;
   }
 
@@ -79,7 +88,7 @@ var clean = function() {
   projectRootDir = path.resolve(_this.options.root);
   webpackDir = path.dirname(module.parent.filename);
 
-  if (os.platform() === 'win32') {
+  if (os.platform() === "win32") {
     workingDir = upperCaseWindowsRoot(workingDir);
     dirName = upperCaseWindowsRoot(dirName);
     projectRootDir = upperCaseWindowsRoot(projectRootDir);
@@ -90,37 +99,58 @@ var clean = function() {
   _this.paths.forEach(function(rimrafPath) {
     rimrafPath = path.resolve(_this.options.root, rimrafPath);
 
-    if (os.platform() === 'win32') {
+    if (os.platform() === "win32") {
       rimrafPath = upperCaseWindowsRoot(rimrafPath);
     }
 
     // disallow deletion any directories outside of root path.
-    if (rimrafPath.indexOf(projectRootDir) < 0 && !_this.options.allowExternal) {
-      _this.options.verbose && console.warn(
-        'clean-webpack-plugin: ' + rimrafPath + ' is outside of the project root. Skipping...');
-      results.push({ path: rimrafPath, output: 'must be inside the project root' });
+    if (
+      rimrafPath.indexOf(projectRootDir) < 0 &&
+      !_this.options.allowExternal
+    ) {
+      _this.options.verbose &&
+        console.warn(
+          "clean-webpack-plugin: " +
+            rimrafPath +
+            " is outside of the project root. Skipping..."
+        );
+      results.push({
+        path: rimrafPath,
+        output: "must be inside the project root"
+      });
       return;
     }
 
     if (rimrafPath === projectRootDir) {
       _this.options.verbose &&
         console.warn(
-          'clean-webpack-plugin: ' + rimrafPath + ' is equal to project root. Skipping...');
-      results.push({ path: rimrafPath, output: 'is equal to project root' });
+          "clean-webpack-plugin: " +
+            rimrafPath +
+            " is equal to project root. Skipping..."
+        );
+      results.push({ path: rimrafPath, output: "is equal to project root" });
       return;
     }
 
     if (rimrafPath === webpackDir) {
       _this.options.verbose &&
-        console.warn('clean-webpack-plugin: ' + rimrafPath + ' would delete webpack. Skipping...');
-      results.push({ path: rimrafPath, output: 'would delete webpack' });
+        console.warn(
+          "clean-webpack-plugin: " +
+            rimrafPath +
+            " would delete webpack. Skipping..."
+        );
+      results.push({ path: rimrafPath, output: "would delete webpack" });
       return;
     }
 
     if (rimrafPath === dirName || rimrafPath === workingDir) {
       _this.options.verbose &&
-        console.log('clean-webpack-plugin: ' + rimrafPath + ' is working directory. Skipping...');
-      results.push({ path: rimrafPath, output: 'is working directory' });
+        console.log(
+          "clean-webpack-plugin: " +
+            rimrafPath +
+            " is working directory. Skipping..."
+        );
+      results.push({ path: rimrafPath, output: "is working directory" });
       return;
     }
 
@@ -131,9 +161,18 @@ var clean = function() {
       try {
         var pathStat = fs.statSync(rimrafPath);
         if (pathStat.isDirectory()) {
-          childrenAfterExcluding = fs.readdirSync(rimrafPath)
+          childrenAfterExcluding = fs
+            .readdirSync(rimrafPath)
             .filter(function(childFile) {
-              var include = _this.options.exclude.indexOf(childFile) < 0;
+              var include = true;
+
+              _this.options.exclude.forEach(function(exclusionRule) {
+                if (childFile.match(exclusionRule)) {
+                  include = false;
+                  return;
+                }
+              });
+
               if (!include) {
                 excludedChildren.push(childFile);
               }
@@ -141,14 +180,14 @@ var clean = function() {
             })
             .map(function(file) {
               var fullPath = path.join(rimrafPath, file);
-              if (os.platform() === 'win32') {
+              if (os.platform() === "win32") {
                 fullPath = upperCaseWindowsRoot(fullPath);
               }
               return fullPath;
             });
         }
-        if (_this.options.exclude.indexOf('.') >= 0) {
-          excludedChildren.push('.');
+        if (_this.options.exclude.indexOf(".") >= 0) {
+          excludedChildren.push(".");
         }
       } catch (e) {
         childrenAfterExcluding = [];
@@ -166,13 +205,24 @@ var clean = function() {
     }
 
     _this.options.verbose &&
-      console.warn('clean-webpack-plugin: ' + rimrafPath + ' has been removed.');
-    _this.options.verbose && excludedChildren.length &&
-      console.warn('clean-webpack-plugin: ' + excludedChildren.length + ' file(s) excluded - ' + excludedChildren.join(', '));
+      console.warn(
+        "clean-webpack-plugin: " + rimrafPath + " has been removed."
+      );
+    _this.options.verbose &&
+      excludedChildren.length &&
+      console.warn(
+        "clean-webpack-plugin: " +
+          excludedChildren.length +
+          " file(s) excluded - " +
+          excludedChildren.join(", ")
+      );
 
-    excludedChildren.length ?
-      results.push({ path: rimrafPath, output: 'removed with exclusions (' + excludedChildren.length + ')' }) :
-      results.push({ path: rimrafPath, output: 'removed' });
+    excludedChildren.length
+      ? results.push({
+          path: rimrafPath,
+          output: "removed with exclusions (" + excludedChildren.length + ")"
+        })
+      : results.push({ path: rimrafPath, output: "removed" });
   });
 
   return results;
